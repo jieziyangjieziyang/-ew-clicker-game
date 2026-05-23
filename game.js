@@ -6,9 +6,7 @@ const GAME_STATE = {
     game_cleared: false,
     phase2_active: false,
     true_cleared: false,
-    cost_multiplier: 1.15,
-    playerName: "Player",
-    startTime: 0
+    cost_multiplier: 1.15
 };
 
 const UPGRADES = {
@@ -164,16 +162,12 @@ function updateDisplay() {
     // Checks Phase 1
     if (!GAME_STATE.game_cleared && !GAME_STATE.phase2_active && GAME_STATE.score >= 100000000) {
         GAME_STATE.game_cleared = true;
-        const duration = (Date.now() - GAME_STATE.startTime) / 1000;
-        saveRecord('phase1', GAME_STATE.playerName, duration);
         showGameClearModal();
     }
 
     // Check Phase 2 (True Clear)
     if (GAME_STATE.phase2_active && !GAME_STATE.true_cleared && GAME_STATE.score >= 1000000000000) {
         GAME_STATE.true_cleared = true;
-        const duration = (Date.now() - GAME_STATE.startTime) / 1000;
-        saveRecord('phase2', GAME_STATE.playerName, duration);
         showTrueClearModal();
     }
 }
@@ -515,54 +509,8 @@ window.closeModal = function() {
     elModalOverlay.classList.add('hidden');
 }
 
-window.startGame = function() {
-    const input = document.getElementById('player-name-input').value.trim();
-    if (!input) {
-        alert('請輸入您的代號！');
-        return;
-    }
-    GAME_STATE.playerName = input;
-    GAME_STATE.startTime = Date.now();
-    document.getElementById('name-modal-overlay').classList.add('hidden');
-    initAudio();
-    gameLoopStarted = true;
-}
-
-function saveRecord(phase, name, timeSeconds) {
-    let records = JSON.parse(localStorage.getItem('clicker_leaderboard') || '{"phase1":[], "phase2":[]}');
-    records[phase].push({ name, time: timeSeconds, date: new Date().toISOString() });
-    records[phase].sort((a,b) => a.time - b.time);
-    records[phase] = records[phase].slice(0, 10);
-    localStorage.setItem('clicker_leaderboard', JSON.stringify(records));
-}
-
-window.openLeaderboard = function() {
-    const records = JSON.parse(localStorage.getItem('clicker_leaderboard') || '{"phase1":[], "phase2":[]}');
-    const content = document.getElementById('lb-content');
-    let html = '<h3 style="font-size:1.3rem;">一億餅乾 (Phase 1)</h3><br>';
-    if(records.phase1.length === 0) html += '<p style="color:#aaa;">尚無紀錄</p>';
-    records.phase1.forEach((r, i) => {
-        html += `<div class="lb-entry"><span>#${i+1} ${r.name}</span> <span>${r.time.toFixed(1)} 秒</span></div>`;
-    });
-    
-    html += '<br><h3 style="font-size:1.3rem; margin-top:20px; color:#8e44ad;">一兆餅乾 (Phase 2)</h3><br>';
-    if(records.phase2.length === 0) html += '<p style="color:#aaa;">尚無紀錄</p>';
-    records.phase2.forEach((r, i) => {
-        html += `<div class="lb-entry"><span>#${i+1} ${r.name}</span> <span>${r.time.toFixed(1)} 秒</span></div>`;
-    });
-    
-    content.innerHTML = html;
-    document.getElementById('lb-modal-overlay').classList.remove('hidden');
-}
-
-window.closeLeaderboard = function() {
-    document.getElementById('lb-modal-overlay').classList.add('hidden');
-}
-
 // 主遊戲迴圈 (每 100ms 執行)
-let gameLoopStarted = false;
 setInterval(() => {
-    if (!gameLoopStarted) return;
     // Auto Clicker
     const autoNum = UPGRADES['autoclick'].count;
     if (autoNum > 0) {
